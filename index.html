@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:," />
+    <title>CV Card Board — Build a CV from a Deck of Cards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --felt:#10150f;
+        --felt-hi:#1d2a20;
+        --felt-lo:#080a08;
+        --rail:#171a17;
+        --rail-line:#2c322c;
+        --paper:#f8f5ee;
+        --paper-2:#efe9db;
+        --ink:#211d16;
+        --ink-soft:#5d574a;
+        --silver:#cfd4dc;
+        --silver-dim:#9aa1ab;
+        --accent:#e9e4d8;
+        --gold:#d9b45c;
+        --legal:#c9a35f;
+        --systems:#8fb4d9;
+        --ai:#a7c4a0;
+        --education:#c9a0d8;
+        --danger:#e08a7a;
+        --shadow:0 10px 22px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.5);
+      }
+      html{ scroll-behavior:smooth; }
+      body{
+        margin:0;
+        font-family:"Libre Franklin", system-ui, sans-serif;
+        background:var(--felt-lo);
+        color:#ece9e2;
+        -webkit-font-smoothing:antialiased;
+      }
+      .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+
+      /* ---------- Intro ---------- */
+      .intro{
+        max-width:1240px; margin:0 auto; padding:28px 20px 6px;
+      }
+      .intro h1{
+        font-size:clamp(1.7rem, 4.6vw, 2.9rem);
+        font-weight:900; letter-spacing:-.02em; line-height:1.04; margin:0 0 10px;
+      }
+      .intro h1 em{ font-style:normal; color:var(--gold); }
+      .intro p.lede{
+        margin:0; max-width:62ch; font-size:1.02rem; line-height:1.55; color:#cfccc2;
+      }
+      .intro p.lede strong{ color:#fff; }
+      .who{
+        margin-top:14px; display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center;
+        font-size:.86rem; color:var(--silver-dim);
+      }
+      .who b{ color:#fff; font-weight:600; }
+      .who .dot{ width:4px; height:4px; border-radius:50%; background:var(--silver-dim); }
+
+      /* How it works */
+      .how{
+        margin:22px 0 4px; display:grid; gap:10px;
+        grid-template-columns:1fr;
+      }
+      @media (min-width:760px){ .how{ grid-template-columns:repeat(3,1fr); } }
+      .step{
+        background:linear-gradient(180deg,#1a201b,#141814);
+        border:1px solid var(--rail-line); border-radius:10px;
+        padding:14px 16px; display:flex; gap:14px; align-items:flex-start;
+      }
+      .step .n{
+        font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+        border:1px solid var(--silver-dim); color:var(--silver);
+        border-radius:999px; padding:4px 9px; white-space:nowrap; margin-top:2px;
+      }
+      .step h3{ margin:0 0 4px; font-size:.98rem; font-weight:800; }
+      .step p{ margin:0; font-size:.86rem; line-height:1.45; color:#bdbab0; }
+      /* tiny CSS demo: cards sliding into a tray slot */
+      .demo{ position:relative; width:74px; height:46px; flex:none; margin-top:2px; }
+      .demo .slot{
+        position:absolute; right:0; top:6px; width:34px; height:34px;
+        border:1.5px dashed var(--silver-dim); border-radius:6px;
+      }
+      .demo .mc{
+        position:absolute; width:22px; height:30px; border-radius:4px;
+        background:var(--paper); box-shadow:0 3px 8px rgba(0,0,0,.5);
+      }
+      .demo .mc:nth-child(2){ left:0; top:2px; transform:rotate(-9deg); animation:deal 3.6s ease-in-out infinite; }
+      .demo .mc:nth-child(3){ left:8px; top:10px; transform:rotate(4deg); background:var(--paper-2); animation:deal 3.6s ease-in-out .5s infinite; }
+      @keyframes deal{
+        0%,55%{ translate:0 0; opacity:1; }
+        80%,100%{ translate:34px -2px; opacity:.25; }
+      }
+      .invite{
+        margin:16px 0 2px; padding:12px 16px; border-radius:10px;
+        border:1px solid #3d4438; background:#161c15;
+        font-size:.95rem; line-height:1.5; color:#d8d4c8;
+      }
+      .invite b{ color:var(--gold); }
+
+      /* ---------- Control bar ---------- */
+      .controls{
+        position:sticky; top:0; z-index:200;
+        background:rgba(10,12,10,.92); backdrop-filter:blur(8px);
+        border-bottom:1px solid var(--rail-line);
+      }
+      .controls-in{
+        max-width:1240px; margin:0 auto; padding:10px 20px;
+        display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+      }
+      .controls .lbl{
+        font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.14em;
+        text-transform:uppercase; color:var(--silver-dim); margin-right:2px;
+      }
+      .preset{
+        appearance:none; border:1px solid var(--rail-line); background:#1b1f1b; color:#ece9e2;
+        border-radius:999px; padding:8px 16px; font:inherit; font-weight:600; font-size:.9rem;
+        cursor:pointer; display:inline-flex; align-items:center; gap:8px; min-height:2.5rem;
+      }
+      .preset .cdot{ width:9px; height:9px; border-radius:50%; flex:none; }
+      .preset[data-preset="legal"] .cdot{ background:var(--legal); }
+      .preset[data-preset="systems"] .cdot{ background:var(--systems); }
+      .preset[data-preset="ai"] .cdot{ background:var(--ai); }
+      .preset[data-preset="education"] .cdot{ background:var(--education); }
+      .preset:hover{ border-color:var(--silver-dim); }
+      .preset.active{ background:var(--paper); color:var(--ink); border-color:var(--paper); }
+      .preset.active .cdot{ box-shadow:0 0 0 2px rgba(0,0,0,.25); }
+      .controls .spacer{ flex:1; }
+      .btn{
+        appearance:none; border-radius:8px; padding:9px 16px; font:inherit; font-weight:700;
+        font-size:.9rem; cursor:pointer; min-height:2.5rem;
+        border:1px solid var(--rail-line); background:#1b1f1b; color:#ece9e2;
+      }
+      .btn:hover{ border-color:var(--silver-dim); }
+      .btn.primary{ background:var(--paper); color:var(--ink); border-color:var(--paper); }
+      .btn.primary:hover{ background:#fff; }
+      .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .count-chip{
+        font-family:"IBM Plex Mono",monospace; font-size:.82rem; color:var(--silver);
+        border:1px solid var(--rail-line); border-radius:999px; padding:7px 12px;
+      }
+      .count-chip b{ color:#fff; }
+
+      /* ---------- Layout ---------- */
+      .layout{
+        max-width:1240px; margin:0 auto; padding:18px 20px 40px;
+        display:grid; grid-template-columns:1fr; gap:22px; align-items:start;
+      }
+      @media (min-width:1024px){
+        .layout{ grid-template-columns:minmax(0,1fr) 322px; }
+      }
+
+      /* ---------- The table ---------- */
+      .table{
+        position:relative;
+        border-radius:18px;
+        padding:26px 22px 34px;
+        background:
+          radial-gradient(120% 90% at 50% 0%, var(--felt-hi) 0%, #141b15 55%, var(--felt) 100%);
+        box-shadow:inset 0 0 0 1px #2e3a2f, inset 0 0 90px rgba(0,0,0,.55), 0 24px 50px rgba(0,0,0,.5);
+        overflow:hidden;
+      }
+      .table::before{
+        content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+        background-image:radial-gradient(rgba(255,255,255,.045) 1px, transparent 1.4px);
+        background-size:7px 7px;
+      }
+      .zones{ position:relative; display:grid; gap:30px; grid-template-columns:1fr; }
+      @media (min-width:1180px){
+        .zones{ grid-template-columns:1fr 1fr; }
+        .zone.wide{ grid-column:1 / -1; }
+      }
+      .zone-head{
+        display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-bottom:14px;
+      }
+      .zone-head h2{
+        margin:0; font-size:1.05rem; font-weight:800; letter-spacing:.01em; color:#fff;
+      }
+      .zone-head .deckno{
+        font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.16em;
+        color:var(--gold); text-transform:uppercase;
+      }
+      .zone-head p{ margin:0; font-size:.82rem; color:#a9aca0; }
+      .spread{ display:flex; flex-wrap:wrap; padding:6px 4px 4px 2px; }
+
+      /* ---------- Cards ---------- */
+      .card{
+        position:relative; flex:none;
+        width:178px;
+        margin:0 -28px 16px 0;
+        background:linear-gradient(165deg, #fffdf7 0%, var(--paper) 55%, var(--paper-2) 100%);
+        color:var(--ink); border-radius:12px;
+        box-shadow:var(--shadow);
+        padding:0;
+        cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+        transition:transform .38s cubic-bezier(.22,.8,.3,1), box-shadow .38s ease, opacity .25s ease, filter .25s ease;
+        display:flex; flex-direction:column;
+      }
+      @media (max-width:480px){ .card{ width:162px; margin-right:-22px; } }
+      .card:hover, .card:focus-within{
+        transform:rotate(0deg) translateY(-8px) scale(1.07) !important; z-index:60 !important;
+        box-shadow:0 30px 52px rgba(0,0,0,.58), 0 8px 18px rgba(0,0,0,.5);
+      }
+      .card.dragging{
+        cursor:grabbing; transition:none; z-index:500 !important;
+        box-shadow:0 26px 44px rgba(0,0,0,.6), 0 6px 14px rgba(0,0,0,.5);
+        transform:rotate(0deg) !important;
+      }
+      /* Cover art — the picture on top of each card (Opus-style) */
+      .cover{ position:relative; height:80px; flex:none; overflow:hidden; border-radius:12px 12px 0 0; background:#2a2a26; }
+      .cover-art{ position:absolute; inset:-16px; transition:transform .85s cubic-bezier(.22,.8,.3,1); }
+      .cover-art::after{
+        content:""; position:absolute; inset:0; opacity:.55;
+        background-image:radial-gradient(rgba(255,255,255,.17) 1px, transparent 1.5px);
+        background-size:9px 9px;
+      }
+      .card[data-deck="jobs"] .cover-art{ background:radial-gradient(90% 130% at 85% 0%, rgba(255,226,160,.55), transparent 55%), linear-gradient(125deg,#241a0c 0%, #6d5322 55%, #bb933f 100%); }
+      .card[data-deck="certs"] .cover-art{ background:radial-gradient(90% 130% at 85% 0%, rgba(190,220,250,.5), transparent 55%), linear-gradient(125deg,#101c28 0%, #33526e 55%, #7ea6c9 100%); }
+      .card[data-deck="projects"] .cover-art{ background:radial-gradient(90% 130% at 85% 0%, rgba(205,245,185,.5), transparent 55%), linear-gradient(125deg,#12240f 0%, #38622f 55%, #86b877 100%); }
+      .card[data-deck="skills"] .cover-art{ background:radial-gradient(90% 130% at 85% 0%, rgba(230,205,255,.5), transparent 55%), linear-gradient(125deg,#221631 0%, #5b4180 55%, #a68cc9 100%); }
+      .card[data-deck="life"] .cover-art{ background:radial-gradient(90% 130% at 85% 0%, rgba(255,205,175,.55), transparent 55%), linear-gradient(125deg,#2b130d 0%, #7c3b28 55%, #cf8563 100%); }
+      .cover-sheen{
+        position:absolute; top:-10%; bottom:-10%; left:-45%; width:34%; z-index:2; pointer-events:none;
+        background:linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+        transform:skewX(-18deg); transition:transform .9s ease;
+      }
+      .card:hover .cover-art, .card:focus-within .cover-art{ transform:scale(1.15) translate(-5px,-4px) rotate(-1.2deg); }
+      .card:hover .cover-sheen, .card:focus-within .cover-sheen{ transform:translateX(480%) skewX(-18deg); }
+      .cover-icon{
+        position:absolute; right:11px; bottom:9px; width:42px; height:42px; z-index:2;
+        color:rgba(255,255,255,.94); filter:drop-shadow(0 3px 7px rgba(0,0,0,.4));
+        transition:transform .85s cubic-bezier(.22,.8,.3,1);
+      }
+      .cover-icon svg{ width:100%; height:100%; display:block; }
+      .card:hover .cover-icon, .card:focus-within .cover-icon{ transform:translate(-4px,-5px) scale(1.2) rotate(-5deg); }
+      .card-body{ padding:10px 13px 12px; display:flex; flex-direction:column; gap:4px; flex:1; }
+      /* The unfold: proof stays hidden until the card is hovered or focused */
+      .reveal{
+        display:grid; grid-template-rows:0fr; opacity:0; transform:translateY(5px);
+        transition:grid-template-rows .5s cubic-bezier(.22,.8,.3,1), opacity .35s ease .06s, transform .45s ease;
+      }
+      .reveal-in{ overflow:hidden; min-height:0; }
+      .card:hover .reveal, .card:focus-within .reveal{ grid-template-rows:1fr; opacity:1; transform:none; }
+      .card.dragging .reveal{ grid-template-rows:0fr; opacity:0; transform:translateY(5px); }
+      .peek{
+        font-family:"IBM Plex Mono",monospace; font-size:.6rem; letter-spacing:.1em;
+        text-transform:uppercase; color:#8a8271; margin-top:2px; transition:opacity .25s ease;
+      }
+      .card:hover .peek, .card:focus-within .peek{ opacity:0; }
+      @media (hover:none){
+        .reveal{ grid-template-rows:1fr; opacity:1; transform:none; }
+        .peek{ display:none; }
+      }
+      .card .tab{
+        position:absolute; top:8px; left:8px; z-index:3;
+        display:inline-flex; align-items:center; gap:6px;
+        font-family:"IBM Plex Mono",monospace; font-size:.6rem; font-weight:600;
+        letter-spacing:.13em; text-transform:uppercase; color:#f5f1e6;
+        background:rgba(12,11,8,.55); padding:4px 8px; border-radius:999px;
+      }
+      .card .tab .pip{ width:7px; height:7px; border-radius:2px; background:#b9b2a0; flex:none; }
+      .card[data-deck="jobs"] .pip{ background:#8a7a52; }
+      .card[data-deck="certs"] .pip{ background:#7d94a6; }
+      .card[data-deck="projects"] .pip{ background:#7d9b78; }
+      .card[data-deck="skills"] .pip{ background:#a08bb5; }
+      .card[data-deck="life"] .pip{ background:#b57f6e; }
+      .card h3{ margin:0; font-size:.92rem; font-weight:800; line-height:1.22; }
+      .card .sub{ font-size:.76rem; font-weight:600; color:#4c463a; line-height:1.3; }
+      .card .dates{
+        font-family:"IBM Plex Mono",monospace; font-size:.66rem; color:var(--ink-soft);
+      }
+      .card .proof{ margin:0; padding-top:3px; font-size:.74rem; line-height:1.42; color:#3d382e; }
+      .card .lanes{ margin-top:7px; display:flex; gap:4px; flex-wrap:wrap; padding-top:4px; }
+      .lane-dot{ width:8px; height:8px; border-radius:50%; border:1px solid rgba(0,0,0,.18); }
+      .lane-dot.legal{ background:var(--legal); } .lane-dot.systems{ background:var(--systems); }
+      .lane-dot.ai{ background:var(--ai); } .lane-dot.education{ background:var(--education); }
+      .card .picknum{
+        position:absolute; top:-10px; right:-8px; width:26px; height:26px; border-radius:50%;
+        background:var(--ink); color:#fff; font-family:"IBM Plex Mono",monospace;
+        font-size:.78rem; font-weight:600; display:none; align-items:center; justify-content:center;
+        border:2px solid var(--gold); box-shadow:0 4px 10px rgba(0,0,0,.5); z-index:5;
+      }
+      .card.picked{ box-shadow:0 0 0 2.5px var(--gold), var(--shadow); }
+      .card.picked .picknum{ display:flex; }
+      .card.fit{ box-shadow:0 0 0 2px rgba(255,255,255,.75), var(--shadow); }
+      .card.picked.fit{ box-shadow:0 0 0 2.5px var(--gold), var(--shadow); }
+      .card.dim{ opacity:.38; filter:saturate(.4); }
+      .card-ph{ flex:none; border-radius:10px; background:rgba(255,255,255,.05);
+        box-shadow:inset 0 0 0 1.5px dashed rgba(255,255,255,.22); }
+      .addcard{
+        flex:none; width:172px; min-height:158px; margin:0 0 16px 6px;
+        border:1.5px dashed rgba(255,255,255,.35); border-radius:10px;
+        background:rgba(255,255,255,.03); color:#d8d4c8;
+        display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+        cursor:pointer; font:inherit; padding:14px; text-align:center;
+      }
+      @media (max-width:480px){ .addcard{ width:158px; } }
+      .addcard:hover{ border-color:var(--gold); color:#fff; background:rgba(255,255,255,.06); }
+      .addcard .plus{ font-size:1.5rem; font-weight:300; line-height:1; }
+      .addcard span{ font-size:.8rem; font-weight:600; }
+      .addcard small{ font-size:.7rem; color:#a9aca0; line-height:1.4; }
+
+      /* ---------- Tray ---------- */
+      .tray{
+        background:var(--rail); border:1px solid var(--rail-line); border-radius:14px;
+        padding:16px; position:sticky; top:76px;
+      }
+      @media (max-width:1023px){
+        .tray{ position:fixed; left:10px; right:10px; bottom:10px; top:auto; z-index:300;
+          box-shadow:0 -10px 34px rgba(0,0,0,.55); max-height:54vh; display:flex; flex-direction:column;
+          padding:12px 14px; }
+        body{ padding-bottom:216px; }
+        .tray .tray-list{ overflow-y:auto; }
+        .tray .hint{ display:none; }
+        .tray-empty{ display:none !important; }
+        .tray .meter-note{ font-size:.72rem; margin-bottom:6px; }
+        .tray-actions{ margin-top:10px; }
+      }
+      .tray-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+      .tray-head h2{ margin:0; font-size:1rem; font-weight:800; }
+      .tray-head .count{
+        margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:.8rem;
+        color:var(--silver); white-space:nowrap;
+      }
+      .tray-head .count b{ color:#fff; font-size:1rem; }
+      .meter{ height:6px; border-radius:99px; background:#262b26; overflow:hidden; margin:8px 0 4px; }
+      .meter i{ display:block; height:100%; background:var(--silver); border-radius:99px; transition:width .3s ease; }
+      .meter i.good{ background:var(--gold); }
+      .meter-note{ font-size:.76rem; color:var(--silver-dim); margin:0 0 10px; line-height:1.4; }
+      .tray-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px; }
+      .tray-list li{
+        display:flex; align-items:center; gap:9px; background:#1e221e;
+        border:1px solid var(--rail-line); border-radius:8px; padding:7px 9px;
+      }
+      .tray-list .no{
+        font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+        background:var(--paper); color:var(--ink); border-radius:5px; padding:3px 6px; flex:none;
+      }
+      .tray-list .tt{ font-size:.83rem; font-weight:600; line-height:1.3; flex:1; min-width:0; }
+      .tray-list .tt small{ display:block; font-weight:500; color:var(--silver-dim); font-size:.72rem; }
+      .tray-list .rm{
+        appearance:none; border:none; background:transparent; color:var(--silver-dim);
+        font-size:1.05rem; line-height:1; cursor:pointer; padding:6px 8px; border-radius:6px; flex:none;
+      }
+      .tray-list .rm:hover{ color:#fff; background:#2b302b; }
+      .tray-empty{ font-size:.86rem; color:var(--silver-dim); line-height:1.5; margin:4px 0 2px; }
+      .tray-actions{ display:flex; gap:8px; margin-top:14px; }
+      .tray-actions .btn{ flex:1; }
+      .tray .hint{ font-size:.74rem; color:#7d8272; margin:10px 0 0; line-height:1.45; }
+
+      /* ---------- Modals ---------- */
+      .overlay{
+        position:fixed; inset:0; z-index:600; background:rgba(4,5,4,.72);
+        display:none; align-items:flex-start; justify-content:center; overflow-y:auto; padding:22px 12px;
+      }
+      .overlay.open{ display:flex; }
+      .sheet{
+        background:var(--paper); color:var(--ink); border-radius:12px; width:100%; max-width:760px;
+        box-shadow:0 30px 70px rgba(0,0,0,.6); padding:0; overflow:hidden;
+      }
+      /* CV document */
+      .cvdoc{ padding:34px 38px 30px; }
+      @media (max-width:560px){ .cvdoc{ padding:24px 20px; } }
+      .cvdoc .cv-name{ font-size:1.65rem; font-weight:900; letter-spacing:-.01em; margin:0; }
+      .cvdoc .cv-facts{
+        font-family:"IBM Plex Mono",monospace; font-size:.74rem; color:var(--ink-soft);
+        margin:6px 0 0; line-height:1.7;
+      }
+      .cvdoc .cv-profile{
+        margin:16px 0 4px; font-size:.95rem; line-height:1.55; font-style:italic;
+        border-top:2.5px solid var(--ink); padding-top:14px;
+      }
+      .cvdoc h4{
+        font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.18em;
+        text-transform:uppercase; color:var(--ink-soft); margin:22px 0 10px;
+        border-bottom:1px solid #d8d2c2; padding-bottom:5px;
+      }
+      .cv-entry{ margin-bottom:12px; }
+      .cv-entry .r1{ display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; }
+      .cv-entry .r1 b{ font-size:.95rem; }
+      .cv-entry .r1 .where{ font-size:.85rem; color:#4c463a; font-weight:600; }
+      .cv-entry .r1 .when{
+        margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--ink-soft);
+      }
+      .cv-entry p{ margin:3px 0 0; font-size:.86rem; line-height:1.5; color:#3d382e; }
+      .cv-empty{ font-size:.95rem; line-height:1.6; color:#4c463a; padding:8px 0 4px; }
+      .sheet-bar{
+        display:flex; flex-wrap:wrap; gap:8px; padding:14px 18px; background:#ece7d9;
+        border-top:1px solid #d8d2c2;
+      }
+      .sheet-bar .btn{ border-color:#c9c2ae; background:#fff; color:var(--ink); }
+      .sheet-bar .btn.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+      .sheet-bar .note{ font-size:.78rem; color:var(--ink-soft); align-self:center; flex:1; min-width:140px; }
+      /* Add-card form */
+      .form-sheet{ max-width:480px; padding:26px 26px 8px; }
+      .form-sheet h3{ margin:0 0 4px; font-size:1.2rem; font-weight:900; }
+      .form-sheet p{ margin:0 0 16px; font-size:.86rem; color:var(--ink-soft); line-height:1.5; }
+      .form-sheet label{ display:block; font-size:.78rem; font-weight:700; margin:0 0 5px;
+        font-family:"IBM Plex Mono",monospace; letter-spacing:.08em; text-transform:uppercase; color:#4c463a; }
+      .form-sheet input[type="text"], .form-sheet textarea, .form-sheet select{
+        width:100%; font:inherit; font-size:.95rem; padding:10px 12px; margin-bottom:14px;
+        border:1px solid #c9c2ae; border-radius:8px; background:#fff; color:var(--ink);
+      }
+      .form-sheet textarea{ min-height:74px; resize:vertical; }
+      .lane-checks{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+      .lane-checks label{
+        display:inline-flex; align-items:center; gap:7px; font-family:inherit; letter-spacing:0;
+        text-transform:none; font-size:.86rem; font-weight:600; border:1px solid #c9c2ae;
+        border-radius:999px; padding:8px 13px; cursor:pointer; margin:0; min-height:2.25rem;
+      }
+      .lane-checks input{ width:17px; height:17px; accent-color:#211d16; }
+      .form-bar{ display:flex; gap:8px; padding:14px 0 18px; }
+      .form-bar .btn{ border-color:#c9c2ae; background:#fff; color:var(--ink); flex:1; }
+      .form-bar .btn.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+      .toast{
+        position:fixed; left:50%; bottom:118px; transform:translateX(-50%) translateY(16px);
+        background:var(--paper); color:var(--ink); font-size:.86rem; font-weight:600;
+        padding:10px 18px; border-radius:999px; box-shadow:0 12px 30px rgba(0,0,0,.5);
+        opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:700;
+        max-width:88vw; text-align:center;
+      }
+      @media (min-width:1024px){ .toast{ bottom:28px; } }
+      .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+      footer.pagefoot{
+        max-width:1240px; margin:0 auto; padding:0 20px 34px; color:#767b6e; font-size:.8rem; line-height:1.6;
+      }
+      @media (prefers-reduced-motion: reduce){
+        .demo .mc{ animation:none; }
+        html{ scroll-behavior:auto; }
+        .card, .meter i, .toast, .cover-art, .cover-icon, .cover-sheen, .reveal{ transition:none; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="intro">
+      <h1>Your whole life, dealt as <em>cards</em>.<br />Build the CV each job deserves.</h1>
+      <p class="lede">
+        Nobody's life fits one résumé. So spread it on the table instead: every job, project,
+        certification and skill as its own card. Pick a profile, deal the 8–10 cards that prove
+        you fit <strong>that</strong> position — and leave the rest in the deck.
+        A legal job doesn't need your systems cards. A systems job doesn't need your legal ones.
+      </p>
+      <div class="who">
+        <span><b>Jesús Alfonso Gutiérrez Flores</b></span><span class="dot"></span>
+        <span>Monterrey, Mexico</span><span class="dot"></span>
+        <span>English Advanced (C1) · Spanish native</span><span class="dot"></span>
+        <span>Available in 24–48h · Hybrid CDMX / remote</span>
+      </div>
+
+      <div class="how">
+        <div class="step">
+          <span class="n">STEP 1</span>
+          <div>
+            <h3>Spread your life on the table</h3>
+            <p>Five decks — jobs, certifications, projects, skills, life. Hover a card: its picture moves, the card grows and the proof unfolds underneath. Drag it around the felt, tap to deal it.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="n">STEP 2</span>
+          <div>
+            <h3>Pick a profile</h3>
+            <p>Legal, Systems, AI or Education. The board lights up the cards that fit and deals a strong starting hand.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="demo" aria-hidden="true">
+            <div class="slot"></div><div class="mc"></div><div class="mc"></div>
+          </div>
+          <div>
+            <h3>Deal your hand, preview the CV</h3>
+            <p>Tap cards to add or remove them. Aim for 8–10 — that's a sharp one-page CV. Then preview it assembled.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="invite">
+        <b>Your turn:</b> build your CV from your cards. This board holds Jesús's real deck —
+        every card below is a verified fact from his life. One day, anyone's life could be spread
+        on a table like this. Start with a profile above, or just start tapping cards.
+      </div>
+    </header>
+
+    <div class="controls" role="region" aria-label="Profile presets and CV actions">
+      <div class="controls-in">
+        <span class="lbl">Profile</span>
+        <button class="preset" data-preset="legal" type="button"><span class="cdot"></span>Legal</button>
+        <button class="preset" data-preset="systems" type="button"><span class="cdot"></span>Systems</button>
+        <button class="preset" data-preset="ai" type="button"><span class="cdot"></span>AI</button>
+        <button class="preset" data-preset="education" type="button"><span class="cdot"></span>Education</button>
+        <span class="spacer"></span>
+        <span class="count-chip"><b id="countTop">0</b> cards picked</span>
+        <button class="btn" id="clearTop" type="button">Clear</button>
+        <button class="btn primary" id="previewTop" type="button">Preview CV</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <main class="table" id="table" aria-label="Card table">
+        <div class="zones" id="zones"></div>
+      </main>
+
+      <aside class="tray" aria-label="CV tray">
+        <div class="tray-head">
+          <h2>Your hand — CV tray</h2>
+          <span class="count"><b id="trayCount">0</b> / 10</span>
+        </div>
+        <div class="meter" aria-hidden="true"><i id="meterFill" style="width:0%"></i></div>
+        <p class="meter-note" id="meterNote">Tap cards on the table to deal them here.</p>
+        <ul class="tray-list" id="trayList"></ul>
+        <p class="tray-empty" id="trayEmpty">Nothing dealt yet. A profile preset above deals a starting hand — or tap any card yourself.</p>
+        <div class="tray-actions">
+          <button class="btn" id="clearTray" type="button">Clear</button>
+          <button class="btn primary" id="previewTray" type="button">Preview CV</button>
+        </div>
+        <p class="hint">Order matters: cards appear in the CV in the order you pick them, grouped by section. Drag cards anywhere on the table to rearrange your thinking.</p>
+      </aside>
+    </div>
+
+    <footer class="pagefoot">
+      Every card on this board is a verified fact — nothing invented, nothing padded. In-progress
+      learning is labeled in progress; the Google Project Management card is the Foundations course
+      only, not the full certificate. Decks grow with the “Add a card” slots as life adds more.
+    </footer>
+
+    <!-- Preview CV -->
+    <div class="overlay" id="previewOverlay" role="dialog" aria-modal="true" aria-label="CV preview">
+      <div class="sheet">
+        <div class="cvdoc" id="cvDoc"></div>
+        <div class="sheet-bar">
+          <span class="note" id="copyNote">One page, in the order you dealt it.</span>
+          <button class="btn" id="closePreview" type="button">Back to the table</button>
+          <button class="btn primary" id="copyCv" type="button">Copy CV as text</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add a card -->
+    <div class="overlay" id="addOverlay" role="dialog" aria-modal="true" aria-label="Add a card">
+      <div class="sheet form-sheet">
+        <h3>Add a card</h3>
+        <p>Decks grow as life does. New cards live on this board for this session — add only what's true.</p>
+        <form id="addForm">
+          <label for="addDeck">Deck</label>
+          <select id="addDeck" name="deck">
+            <option value="jobs">Jobs</option>
+            <option value="certs">Certifications &amp; Learning</option>
+            <option value="projects">Projects</option>
+            <option value="skills">Skills</option>
+            <option value="life">Life &amp; Hobbies</option>
+          </select>
+          <label for="addTitle">Card title</label>
+          <input type="text" id="addTitle" name="title" required maxlength="90" placeholder="e.g. New certification, new role, new project" />
+          <label for="addProof">The proof — one honest line</label>
+          <textarea id="addProof" name="proof" maxlength="220" placeholder="What it is, where, and the number or result that proves it."></textarea>
+          <label>Fits which profiles?</label>
+          <div class="lane-checks">
+            <label><input type="checkbox" name="lane" value="legal" /> Legal</label>
+            <label><input type="checkbox" name="lane" value="systems" /> Systems</label>
+            <label><input type="checkbox" name="lane" value="ai" /> AI</label>
+            <label><input type="checkbox" name="lane" value="education" /> Education</label>
+          </div>
+          <div class="form-bar">
+            <button class="btn" type="button" id="cancelAdd">Cancel</button>
+            <button class="btn primary" type="submit">Put it on the table</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      "use strict";
+
+      /* ============ DATA — verified cards only (from CV_CARDS.md) ============ */
+      var DECKS = [
+        { id:"jobs",     no:"Deck 1", name:"Jobs",                  blurb:"The labor history — deal only the years a position actually needs.", wide:true },
+        { id:"certs",    no:"Deck 2", name:"Certifications & Learning", blurb:"Only what's verified. In progress means in progress.", wide:false },
+        { id:"projects", no:"Deck 3", name:"Projects",              blurb:"Public repos and systems — proof, not promises.", wide:false },
+        { id:"skills",   no:"Deck 4", name:"Skills",                blurb:"The stack, grouped the way recruiters scan it.", wide:false },
+        { id:"life",     no:"Deck 5", name:"Life & Hobbies",        blurb:"The person behind the CV — photography, gym, music, art, video.", wide:false }
+      ];
+      var DECK_LABEL = { jobs:"Job", certs:"Learning", projects:"Project", skills:"Skill", life:"Life" };
+      var SECTION_NAME = { jobs:"Experience", projects:"Projects", skills:"Skills", certs:"Certifications & Learning", life:"Life & Interests" };
+      var SECTION_ORDER = ["jobs","projects","skills","certs","life"];
+
+      var CARDS = [
+        /* ---- Jobs ---- */
+        { id:"j-captoora", deck:"jobs", title:"Founder, Captoora", sub:"Photo & video production studio · Monterrey", dates:"Apr 2026 – present",
+          proof:"Built its booking, delivery and marketing systems myself.", lanes:["systems","ai"] },
+        { id:"j-independent", deck:"jobs", title:"Independent Legal Practice", sub:"Jesús Alfonso Gutiérrez Flores", dates:"2016 – present",
+          proof:"Civil, family, mercantile. Litigation, recovery, contracts.", lanes:["legal"] },
+        { id:"j-valproyectos", deck:"jobs", title:"Legal Counsel & AI Automation Systems Lead", sub:"VALProyectos y Desarrollos", dates:"Feb 2024 – present",
+          proof:"Controlled drafting, translation and review workflows; 4 Mexican markets; 8+ document classes.", lanes:["legal","systems","ai"] },
+        { id:"j-gutierrez", deck:"jobs", title:"Legal Engineer & Automation Lead", sub:"Gutiérrez Consultores + MC Despacho", dates:"2020 – present",
+          proof:"10+ properties, MXN 150M+ in claims and assets; tech dispute evidence: ISO 27001, SOC 2, SIEM/WORM, DPIA/PIA.", lanes:["legal","ai"] },
+        { id:"j-valdes", deck:"jobs", title:"Senior Legal Project & Systems Coordinator", sub:"Valdés & Associates", dates:"2016 – 2020",
+          proof:"Enterprise compliance, permits, bilingual contracts; 4,000+ invoices pipeline; 5-person team.", lanes:["legal","systems"] },
+        { id:"j-amda", deck:"jobs", title:"Applied AI Engineer (Project Contract)", sub:"AMDA Agency", dates:"Sep 2025 – Jun 2026",
+          proof:"Multi-agent delivery, review gates, quota/time controls; 25% faster launch, 20% cost reduction.", lanes:["systems","ai"] },
+        { id:"j-ghw", deck:"jobs", title:"Salesforce Administration & Team Leadership", sub:"Great HealthWorks · Fort Lauderdale, remote", dates:"~2020",
+          proof:"Configured Salesforce, permissions, reports, automations; led the retention team.", lanes:["systems"] },
+        { id:"j-teleperformance", deck:"jobs", title:"Satellite Internet Technical Support", sub:"Teleperformance — Exede (Viasat)", dates:"~2016 – 2017",
+          proof:"Troubleshooting, diagnostics, service recovery.", lanes:["systems"] },
+        { id:"j-verizon", deck:"jobs", title:"Contract Administration", sub:"Verizon / Sprint accounts", dates:"~2012 – 2014",
+          proof:"Packages, financed equipment, cancellations; mandatory disclosures read verbatim.", lanes:["systems"] },
+        { id:"j-sutherland", deck:"jobs", title:"Technical Support", sub:"Sutherland — Comcast account", dates:"~2011",
+          proof:"Internet troubleshooting; GoHighLevel training received here.", lanes:["systems"] },
+
+        /* ---- Certifications & Learning ---- */
+        { id:"c-gpm", deck:"certs", title:"Google Project Management — Foundations", sub:"Google · Coursera", dates:"Feb 2024",
+          proof:"First course completed. The full certificate is not claimed — this card is the Foundations course only.", lanes:["systems","education"] },
+        { id:"c-gcyber", deck:"certs", title:"Google Cybersecurity Professional Certificate", sub:"Google · Coursera", dates:"In progress",
+          proof:"Foundations 22% · Assets, Threats & Vulnerabilities 21% · Play It Safe 37%.", lanes:["systems"] },
+        { id:"c-msgov", deck:"certs", title:"AI Governance, Risk & Compliance", sub:"Microsoft Learn", dates:"In progress",
+          proof:"Governance, risk and compliance for AI systems — studied, not yet certified.", lanes:["ai","education"] },
+        { id:"c-anthropic", deck:"certs", title:"AI Fluency for Small Business", sub:"Anthropic Academy", dates:"In progress",
+          proof:"Practical AI fluency, applied daily in a real small business.", lanes:["ai","education"] },
+        { id:"c-ghl", deck:"certs", title:"GoHighLevel Training", sub:"Sutherland", dates:"Received on the job",
+          proof:"CRM and automation platform training, received while at Sutherland.", lanes:["systems"] },
+        { id:"c-windsor", deck:"certs", title:"Data Integration Expert", sub:"Windsor.ai", dates:"Sep 2026",
+          proof:"Data Integration Expert — Windsor.ai — Sep 2026", lanes:["systems","ai"] },
+        { id:"c-gemini-edu", deck:"certs", title:"Generative AI for Educators with Gemini Certificate", sub:"Google Developer Experts", dates:"Aug 2026",
+          proof:"Generative AI for Educators with Gemini Certificate — Google Developer Experts — Aug 2026", lanes:["ai","education"] },
+        { id:"c-aiboost", deck:"certs", title:"AI Boost Bites: One-Click Campaign Visuals", sub:"Google for Developers", dates:"Jul 2026",
+          proof:"AI Boost Bites: One-Click Campaign Visuals — Google for Developers — Jul 2026", lanes:["ai"] },
+        { id:"c-orchestrate", deck:"certs", title:"Orchestrate Multi-agent Workflows with Gemini Enterprise", sub:"Google Cloud Security", dates:"Aug 2026",
+          proof:"Orchestrate Multi-agent Workflows with Gemini Enterprise — Google Cloud Security — Aug 2026", lanes:["ai","systems"] },
+        { id:"c-cloudcollab", deck:"certs", title:"Implement Cloud Collaboration and Productivity Workflows", sub:"Google for Startups", dates:"Aug 2026",
+          proof:"Implement Cloud Collaboration and Productivity Workflows — Google for Startups — Aug 2026", lanes:["systems"] },
+        { id:"c-mlapis", deck:"certs", title:"Use Machine Learning APIs on Google Cloud Skill Badge", sub:"Google Developer Experts", dates:"Aug 2026",
+          proof:"Use Machine Learning APIs on Google Cloud Skill Badge — Google Developer Experts — Aug 2026", lanes:["ai","systems"] },
+        { id:"c-deepmind-slm", deck:"certs", title:"Google DeepMind: Train A Small Language Model", sub:"Google DeepMind", dates:"Aug 2026",
+          proof:"Google DeepMind: Train A Small Language Model — Google DeepMind — Aug 2026", lanes:["ai"] },
+        { id:"c-adk", deck:"certs", title:"Engineer AI Agents with Agent Development Kit (ADK)", sub:"Google", dates:"Aug 2026",
+          proof:"Engineer AI Agents with Agent Development Kit (ADK) — Google — Aug 2026", lanes:["ai","systems"] },
+        { id:"c-multiagent-deploy", deck:"certs", title:"Deploy Multi-Agent Architectures", sub:"Google", dates:"Jul 2026",
+          proof:"Deploy Multi-Agent Architectures — Google — Jul 2026", lanes:["ai","systems"] },
+        { id:"c-diplomado", deck:"certs", title:"Diplomado en el Código Nacional de Procedimientos Civiles y Familiares", sub:"Instituto de la Judicatura del Estado de Nuevo León", dates:"Dec 2025 · Valid to Dec 2030",
+          proof:"Diplomado en el Código Nacional de Procedimientos Civiles y Familiares — Instituto de la Judicatura del Estado de Nuevo León — Dec 2025, valid to Dec 2030", lanes:["legal","education"] },
+
+        /* ---- Projects ---- */
+        { id:"p-rag", deck:"projects", title:"contract-rag-langgraph-n8n", sub:"Public repo", dates:"",
+          proof:"RAG over contracts, LangGraph + n8n, compliance-first fintech/banking.", lanes:["ai","legal"] },
+        { id:"p-act", deck:"projects", title:"llm-agent-ai-act-gdpr-checklist", sub:"Public repo", dates:"",
+          proof:"Evaluates LLM agents against the EU AI Act and GDPR.", lanes:["ai","legal"] },
+        { id:"p-lpa", deck:"projects", title:"legal-practice-agent", sub:"Public repo", dates:"",
+          proof:"Legal filings demo; nothing is filed without attorney approval; audit trails.", lanes:["ai","legal"] },
+        { id:"p-quotaura", deck:"projects", title:"quotaura", sub:"Public repo · Swift", dates:"",
+          proof:"macOS menu-bar app (Swift) for managing AI subscription quotas.", lanes:["systems","ai"] },
+        { id:"p-prompt", deck:"projects", title:"PROMPT AGENT / AMDA", sub:"Multi-agent system", dates:"",
+          proof:"14 roles, 3 agent nodes in n8n, smoke test 17/17.", lanes:["ai","systems"] },
+        { id:"p-invoices", deck:"projects", title:"4,000+ Invoices Pipeline", sub:"Valdés & Associates", dates:"",
+          proof:"Normalized and prepared 4,000+ invoices for expert translation certification in tax litigation.", lanes:["legal","systems","ai"] },
+
+        /* ---- Skills ---- */
+        { id:"s-lang", deck:"skills", title:"Languages", sub:"Code", dates:"",
+          proof:"Python · TypeScript · Swift · SQL", lanes:["systems","ai"] },
+        { id:"s-ai", deck:"skills", title:"AI Stack", sub:"Build", dates:"",
+          proof:"LangGraph · n8n · RAG · LLM APIs · Pinecone · vector DBs", lanes:["ai","systems"] },
+        { id:"s-data", deck:"skills", title:"Data & Platforms", sub:"Systems", dates:"",
+          proof:"PostgreSQL · Supabase · Salesforce · DocuSign", lanes:["systems"] },
+        { id:"s-tools", deck:"skills", title:"AI Tools", sub:"Daily workflow", dates:"",
+          proof:"Anti-Gravity · Grok · Muse", lanes:["systems","ai"] },
+        { id:"s-gov", deck:"skills", title:"Governance", sub:"Risk & compliance", dates:"",
+          proof:"EU AI Act, GDPR, traceability, guardrails, access logs, SIEM/WORM evidence, DPIA/PIA, OWASP, ISO 27001, SOC 2", lanes:["legal","ai"] },
+        { id:"s-human", deck:"skills", title:"Languages", sub:"Human", dates:"",
+          proof:"Spanish native · English Advanced (C1)", lanes:["legal","systems","ai","education"] },
+
+        /* ---- Life & Hobbies ---- */
+        { id:"l-photo", deck:"life", title:"Photography", sub:"Captoora", dates:"",
+          proof:"Founder of Captoora; portrait, fitness, family, events.", lanes:[] },
+        { id:"l-gym", deck:"life", title:"Gym / Fitness", sub:"Training", dates:"",
+          proof:"Training and fitness photography.", lanes:[] },
+        { id:"l-music", deck:"life", title:"Music", sub:"Listening", dates:"",
+          proof:"Music lover.", lanes:[] },
+        { id:"l-art", deck:"life", title:"Art", sub:"Visual", dates:"",
+          proof:"Visual art.", lanes:[] },
+        { id:"l-video", deck:"life", title:"Video", sub:"Production", dates:"",
+          proof:"Video production, behind-the-scenes.", lanes:[] }
+      ];
+
+      /* Profile presets: highlight lane + suggested starting hand (8–10 cards) */
+      var PRESETS = {
+        legal:     { label:"Legal",     hand:["j-independent","j-gutierrez","j-valproyectos","j-valdes","p-rag","p-act","p-lpa","p-invoices","s-gov","s-human"] },
+        systems:   { label:"Systems",   hand:["j-amda","j-captoora","j-valdes","j-ghw","p-quotaura","p-prompt","s-lang","s-data","s-tools","s-human"] },
+        ai:        { label:"AI",        hand:["j-amda","j-valproyectos","j-captoora","p-rag","p-act","p-lpa","p-prompt","s-ai","s-gov","s-human"] },
+        education: { label:"Education", hand:["c-gpm","c-gcyber","c-msgov","c-anthropic","p-act","s-gov","s-ai","s-human"] }
+      };
+      var PROFILE_LINE = "AI is powerful. What companies lack is someone who knows how to control it. Every system I ship has human review, audit trails, and compliance controls built in — without governance, AI is a liability.";
+
+      /* ============ STATE ============ */
+      var byId = {};
+      CARDS.forEach(function(c){ byId[c.id] = c; });
+      var tray = [];            // card ids, in pick order
+      var activePreset = null;
+      var zTop = 60;
+      var userSeq = 0;
+
+      var table = document.getElementById("table");
+      var zonesEl = document.getElementById("zones");
+      var trayList = document.getElementById("trayList");
+      var trayEmpty = document.getElementById("trayEmpty");
+      var trayCount = document.getElementById("trayCount");
+      var countTop = document.getElementById("countTop");
+      var meterFill = document.getElementById("meterFill");
+      var meterNote = document.getElementById("meterNote");
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+
+      function toast(msg){
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2400);
+      }
+      function esc(s){
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function(ch){
+          return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch];
+        });
+      }
+      function tilt(i){ var t = [-3.2,-1.4,1.8,3.4,-2.2,0.9,-3.8,2.6,-0.8,1.2]; return t[i % t.length]; }
+
+      /* ============ RENDER DECKS ============ */
+      function laneDots(lanes){
+        if (!lanes.length) return "";
+        var names = { legal:"Legal", systems:"Systems", ai:"AI", education:"Education" };
+        return '<span class="lanes" aria-hidden="true">' + lanes.map(function(l){
+          return '<span class="lane-dot ' + l + '" title="Fits: ' + names[l] + '"></span>';
+        }).join("") + "</span>";
+      }
+      /* Cover icons — one line-art picture per card, drawn as SVG */
+      var ICONS = {
+        briefcase:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+        scale:'<path d="M12 3v18"/><path d="M8 21h8"/><path d="M4 6h16"/><path d="M5 6l-2 6h4L5 6z"/><path d="M19 6l-2 6h4l-2-6z"/><path d="M3 12c.6 1.3 3.4 1.3 4 0"/><path d="M17 12c.6 1.3 3.4 1.3 4 0"/>',
+        landmark:'<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+        award:'<circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/>',
+        gradcap:'<path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5"/><path d="M22 9v5"/>',
+        shield:'<path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10z"/><path d="M9 11.5l2 2 4-4"/>',
+        code:'<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+        cpu:'<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/>',
+        database:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+        globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2c2.8 3.4 4 6.8 4 10s-1.2 6.6-4 10c-2.8-3.4-4-6.8-4-10s1.2-6.6 4-10z"/>',
+        camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+        video:'<rect x="1" y="5" width="15" height="14" rx="2"/><polygon points="23 7 16 12 23 17 23 7"/>',
+        music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+        palette:'<path d="M12 22a10 10 0 1 1 10-10c0 2.2-1.8 3-3.5 3H16a2.5 2.5 0 0 0-2 4c.6.7.5 3-2 3z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1" fill="currentColor" stroke="none"/>',
+        dumbbell:'<path d="M6.7 6.7v10.6M17.3 6.7v10.6M3.5 9.5v5M20.5 9.5v5M6.7 12h10.6"/>',
+        file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8m8 4H8m2-8H8"/>',
+        layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+        zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        cloud:'<path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+        headphones:'<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
+        radio:'<circle cx="12" cy="12" r="2"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9m9-9a6.4 6.4 0 0 1 0 9M5 5a10 10 0 0 0 0 14m14-14a10 10 0 0 1 0 14"/>',
+        sparkles:'<path d="M12 3l1.9 5.6 5.6 1.4-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/>',
+        heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/>',
+        folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+        wrench:'<path d="M14.7 6.3a4.6 4.6 0 0 0-6.1 6.1L3 18l3 3 5.6-5.6a4.6 4.6 0 0 0 6.1-6.1L14 13l-3-3 3.7-3.7z"/>',
+        clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
+      };
+      function iconSvg(name){
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || ICONS.folder) + "</svg>";
+      }
+      function iconFor(c){
+        var t = (c.title + " " + (c.sub || "")).toLowerCase();
+        function has(s){ return t.indexOf(s) >= 0; }
+        if (has("satellite")) return "radio";
+        if (has("salesforce")) return "cloud";
+        if (has("sutherland") || has("technical support")) return "headphones";
+        if (has("verizon") || has("contract administration")) return "file";
+        if (has("cybersecurity")) return "shield";
+        if (has("diplomado")) return "landmark";
+        if (has("project management")) return "layers";
+        if (has("data integration") || has("windsor")) return "database";
+        if (has("cloud collaboration")) return "cloud";
+        if (has("machine learning")) return "zap";
+        if (has("deepmind") || has("small language model")) return "cpu";
+        if (has("multi-agent") || has("multiagent") || has("orchestrate")) return "layers";
+        if (has("gemini") || has("educators")) return "gradcap";
+        if (has("governance")) return "shield";
+        if (has("gohighlevel")) return "zap";
+        if (has("ai fluency") || has("ai boost") || has("prompt agent")) return "sparkles";
+        if (has("ai-act") || has("ai act")) return "shield";
+        if (has("invoices")) return "file";
+        if (has("contract-rag")) return "file";
+        if (has("quotaura")) return "clock";
+        if (has("legal")) return "scale";
+        if (has("applied ai")) return "cpu";
+        if (has("agent")) return "cpu";
+        if (has("photography") || has("captoora")) return "camera";
+        if (has("gym") || has("fitness")) return "dumbbell";
+        if (has("music")) return "music";
+        if (has("art")) return "palette";
+        if (has("video")) return "video";
+        if (c.deck === "skills"){
+          if (has("human")) return "globe";
+          if (has("code")) return "code";
+          if (has("ai stack")) return "cpu";
+          if (has("data")) return "database";
+          if (has("tools")) return "wrench";
+          return "wrench";
+        }
+        if (c.deck === "jobs") return "briefcase";
+        if (c.deck === "certs") return "award";
+        if (c.deck === "projects") return "folder";
+        if (c.deck === "life") return "heart";
+        return "folder";
+      }
+      function buildCardEl(card, idx){
+        var el = document.createElement("article");
+        el.className = "card";
+        el.dataset.id = card.id;
+        el.dataset.deck = card.deck;
+        el.style.transform = "rotate(" + tilt(idx) + "deg)";
+        el.style.zIndex = 10 + (idx % 8);
+        el.setAttribute("role","button");
+        el.setAttribute("tabindex","0");
+        el.setAttribute("aria-pressed","false");
+        el.setAttribute("aria-label", card.title + " — hover to unfold the proof. Tap to add to or remove from the CV tray. Drag to move on the table.");
+        el.innerHTML =
+          '<span class="picknum" aria-hidden="true"></span>' +
+          '<div class="cover" aria-hidden="true"><div class="cover-art"></div><div class="cover-sheen"></div>' +
+          '<div class="cover-icon">' + iconSvg(iconFor(card)) + '</div>' +
+          '<div class="tab"><span class="pip"></span>' + esc(DECK_LABEL[card.deck]) + '</div></div>' +
+          '<div class="card-body">' +
+          "<h3>" + esc(card.title) + "</h3>" +
+          (card.sub ? '<div class="sub">' + esc(card.sub) + "</div>" : "") +
+          (card.dates ? '<div class="dates">' + esc(card.dates) + "</div>" : "") +
+          '<div class="peek" aria-hidden="true">Hover to unfold</div>' +
+          '<div class="reveal"><div class="reveal-in">' +
+          '<p class="proof">' + esc(card.proof) + "</p>" +
+          laneDots(card.lanes) +
+          "</div></div></div>";
+        attachCardBehavior(el);
+        return el;
+      }
+      function renderDecks(){
+        zonesEl.innerHTML = "";
+        DECKS.forEach(function(deck){
+          var zone = document.createElement("section");
+          zone.className = "zone" + (deck.wide ? " wide" : "");
+          zone.dataset.deck = deck.id;
+          var cards = CARDS.filter(function(c){ return c.deck === deck.id; });
+          zone.innerHTML =
+            '<div class="zone-head"><span class="deckno">' + esc(deck.no) + '</span>' +
+            "<h2>" + esc(deck.name) + '</h2><p>' + esc(deck.blurb) + ' · <span class="zone-count">' + cards.length + ' cards</span></p></div>';
+          var spread = document.createElement("div");
+          spread.className = "spread";
+          cards.forEach(function(c, i){ spread.appendChild(buildCardEl(c, i)); });
+          var add = document.createElement("button");
+          add.type = "button";
+          add.className = "addcard";
+          add.dataset.deck = deck.id;
+          add.innerHTML = '<span class="plus">+</span><span>Add a card</span><small>New job, cert or project?<br/>Decks grow as life does.</small>';
+          add.addEventListener("click", function(){ openAdd(deck.id); });
+          spread.appendChild(add);
+          zone.appendChild(spread);
+          zonesEl.appendChild(zone);
+        });
+      }
+
+      /* ============ SELECTION / TRAY ============ */
+      function cardEl(id){ return table.querySelector('.card[data-id="' + id + '"]'); }
+
+      function toggleCard(id){
+        var i = tray.indexOf(id);
+        if (i >= 0){
+          tray.splice(i, 1);
+          toast("Removed: " + byId[id].title);
+        } else {
+          tray.push(id);
+          toast("Card " + tray.length + " dealt: " + byId[id].title);
+        }
+        syncSelection();
+      }
+      function syncSelection(){
+        CARDS.forEach(function(c){
+          var el = cardEl(c.id);
+          if (!el) return;
+          var i = tray.indexOf(c.id);
+          el.classList.toggle("picked", i >= 0);
+          el.setAttribute("aria-pressed", i >= 0 ? "true" : "false");
+          var num = el.querySelector(".picknum");
+          if (num) num.textContent = i >= 0 ? (i + 1) : "";
+        });
+        renderTray();
+      }
+      function renderTray(){
+        trayCount.textContent = tray.length;
+        countTop.textContent = tray.length;
+        meterFill.style.width = Math.min(100, tray.length * 10) + "%";
+        meterFill.classList.toggle("good", tray.length >= 8 && tray.length <= 10);
+        if (tray.length === 0) meterNote.textContent = "Tap cards on the table to deal them here.";
+        else if (tray.length < 8) meterNote.textContent = tray.length + " picked — a few more strong cards and this hand sings. Aim for 8–10.";
+        else if (tray.length <= 10) meterNote.textContent = tray.length + " cards — right in the one-page zone. This is a hand a recruiter can read in seconds.";
+        else meterNote.textContent = tray.length + " cards — over 10. For a one-page CV, send a couple back to the deck.";
+        trayEmpty.style.display = tray.length ? "none" : "block";
+        trayList.innerHTML = "";
+        tray.forEach(function(id, i){
+          var c = byId[id];
+          var li = document.createElement("li");
+          li.innerHTML =
+            '<span class="no">' + (i + 1) + '</span>' +
+            '<span class="tt">' + esc(c.title) + "<small>" + esc(SECTION_NAME[c.deck]) + (c.dates ? " · " + esc(c.dates) : "") + "</small></span>";
+          var rm = document.createElement("button");
+          rm.type = "button"; rm.className = "rm"; rm.textContent = "×";
+          rm.setAttribute("aria-label", "Remove " + c.title + " from the tray");
+          rm.addEventListener("click", function(){ toggleCard(id); });
+          li.appendChild(rm);
+          trayList.appendChild(li);
+        });
+      }
+      function clearTray(){
+        tray = [];
+        setPreset(null);
+        syncSelection();
+        toast("Tray cleared. The deck is still yours.");
+      }
+
+      /* ============ PRESETS ============ */
+      function setPreset(name){
+        activePreset = name;
+        document.querySelectorAll(".preset").forEach(function(b){
+          b.classList.toggle("active", b.dataset.preset === name);
+        });
+        table.querySelectorAll(".card").forEach(function(el){
+          el.classList.remove("fit","dim");
+          if (name){
+            var c = byId[el.dataset.id];
+            var fits = c && c.lanes.indexOf(name) >= 0;
+            el.classList.add(fits ? "fit" : "dim");
+          }
+        });
+      }
+      function applyPreset(name){
+        if (activePreset === name){           // tapping again: just clear the highlight
+          setPreset(null);
+          return;
+        }
+        setPreset(name);
+        tray = PRESETS[name].hand.slice();
+        syncSelection();
+        toast(PRESETS[name].label + " profile: " + tray.length + " cards dealt. Add or remove any of them.");
+        if (window.innerWidth < 1024){
+          document.querySelector(".tray").scrollIntoView({ behavior:"smooth", block:"nearest" });
+        }
+      }
+      document.querySelectorAll(".preset").forEach(function(b){
+        b.addEventListener("click", function(){ applyPreset(b.dataset.preset); });
+      });
+
+      /* ============ DRAG + TAP (Pointer Events) ============ */
+      function attachCardBehavior(el){
+        var drag = null;
+        el.addEventListener("pointerdown", function(e){
+          if (e.button !== undefined && e.button > 0) return;
+          drag = {
+            x0: e.clientX, y0: e.clientY, active: false,
+            id: el.dataset.id, pid: e.pointerId, ph: null,
+            baseL: 0, baseT: 0
+          };
+          try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        el.addEventListener("pointermove", function(e){
+          if (!drag || drag.pid !== e.pointerId) return;
+          var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+          if (!drag.active){
+            if (Math.abs(dx) + Math.abs(dy) < 8) return;
+            drag.active = true;
+            var tRect = table.getBoundingClientRect();
+            var r = el.getBoundingClientRect();
+            if (el.parentElement !== table){
+              var ph = document.createElement("div");
+              ph.className = "card-ph";
+              ph.style.width = r.width + "px";
+              ph.style.height = r.height + "px";
+              ph.style.margin = "0 -30px 16px 0";
+              el.parentElement.insertBefore(ph, el);
+              drag.ph = ph;
+              table.appendChild(el);
+              el.style.position = "absolute";
+              el.style.margin = "0";
+            }
+            el.style.width = r.width + "px";
+            drag.baseL = r.left - tRect.left;
+            drag.baseT = r.top - tRect.top;
+            el.style.left = drag.baseL + "px";
+            el.style.top = drag.baseT + "px";
+            el.style.zIndex = ++zTop;
+            el.classList.add("dragging");
+          }
+          el.style.left = (drag.baseL + dx) + "px";
+          el.style.top = (drag.baseT + dy) + "px";
+        });
+        function endDrag(e){
+          if (!drag || drag.pid !== e.pointerId) return;
+          var wasDrag = drag.active;
+          el.classList.remove("dragging");
+          drag = null;
+          if (!wasDrag) toggleCard(el.dataset.id);
+        }
+        el.addEventListener("pointerup", endDrag);
+        el.addEventListener("pointercancel", function(){ drag = null; el.classList.remove("dragging"); });
+        el.addEventListener("keydown", function(e){
+          if (e.key === "Enter" || e.key === " "){
+            e.preventDefault();
+            toggleCard(el.dataset.id);
+          }
+        });
+        el.addEventListener("dragstart", function(e){ e.preventDefault(); });
+      }
+
+      /* ============ PREVIEW CV ============ */
+      var previewOverlay = document.getElementById("previewOverlay");
+      var cvDoc = document.getElementById("cvDoc");
+
+      function entryHtml(c){
+        return '<div class="cv-entry"><div class="r1"><b>' + esc(c.title) + "</b>" +
+          (c.sub ? '<span class="where">' + esc(c.sub) + "</span>" : "") +
+          (c.dates ? '<span class="when">' + esc(c.dates) + "</span>" : "") +
+          "</div><p>" + esc(c.proof) + "</p></div>";
+      }
+      function openPreview(){
+        var presetName = activePreset ? PRESETS[activePreset].label : null;
+        var html =
+          '<p class="cv-name">Jesús Alfonso Gutiérrez Flores</p>' +
+          '<p class="cv-facts">Monterrey, Mexico · English Advanced (C1) · Spanish native<br/>' +
+          "Available to start in 24–48 hours · Open to hybrid in CDMX and remote" +
+          (presetName ? "<br/>Tailored for: <b>" + esc(presetName) + "</b> profile" : "") + "</p>" +
+          '<p class="cv-profile">“' + esc(PROFILE_LINE) + "”</p>";
+        if (!tray.length){
+          html += '<p class="cv-empty">Your hand is empty. Go back to the table, pick a profile or tap 8–10 cards, and this page assembles itself — profile line first, then your cards as the proof.</p>';
+        } else {
+          SECTION_ORDER.forEach(function(deckId){
+            var picked = tray.filter(function(id){ return byId[id].deck === deckId; });
+            if (!picked.length) return;
+            html += "<h4>" + esc(SECTION_NAME[deckId]) + "</h4>";
+            picked.forEach(function(id){ html += entryHtml(byId[id]); });
+          });
+        }
+        cvDoc.innerHTML = html;
+        document.getElementById("copyNote").textContent = tray.length
+          ? tray.length + " cards · one page · dealt in your order, grouped by section."
+          : "One page, in the order you dealt it.";
+        previewOverlay.classList.add("open");
+        previewOverlay.scrollTop = 0;
+      }
+      function closePreview(){ previewOverlay.classList.remove("open"); }
+      document.getElementById("previewTop").addEventListener("click", openPreview);
+      document.getElementById("previewTray").addEventListener("click", openPreview);
+      document.getElementById("closePreview").addEventListener("click", closePreview);
+      previewOverlay.addEventListener("click", function(e){ if (e.target === previewOverlay) closePreview(); });
+
+      document.getElementById("copyCv").addEventListener("click", function(){
+        if (!tray.length){ toast("Deal a few cards first — then copy the CV."); return; }
+        var lines = [];
+        lines.push("JESÚS ALFONSO GUTIÉRREZ FLORES");
+        lines.push("Monterrey, Mexico · English Advanced (C1) · Spanish native");
+        lines.push("Available to start in 24–48 hours · Open to hybrid in CDMX and remote");
+        if (activePreset) lines.push("Tailored for: " + PRESETS[activePreset].label + " profile");
+        lines.push("");
+        lines.push("PROFILE");
+        lines.push(PROFILE_LINE);
+        SECTION_ORDER.forEach(function(deckId){
+          var picked = tray.filter(function(id){ return byId[id].deck === deckId; });
+          if (!picked.length) return;
+          lines.push("");
+          lines.push(SECTION_NAME[deckId].toUpperCase());
+          picked.forEach(function(id){
+            var c = byId[id];
+            lines.push("- " + c.title + (c.sub ? " — " + c.sub : "") + (c.dates ? " (" + c.dates + ")" : ""));
+            lines.push("  " + c.proof);
+          });
+        });
+        var text = lines.join("\n");
+        function done(){ toast("CV copied — paste it anywhere."); }
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+        } else { fallbackCopy(text); done(); }
+      });
+      function fallbackCopy(text){
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (err) {}
+        document.body.removeChild(ta);
+      }
+
+      /* ============ CLEAR ============ */
+      document.getElementById("clearTop").addEventListener("click", clearTray);
+      document.getElementById("clearTray").addEventListener("click", clearTray);
+
+      /* ============ ADD A CARD ============ */
+      var addOverlay = document.getElementById("addOverlay");
+      var addDeckSel = document.getElementById("addDeck");
+      function openAdd(deckId){
+        addDeckSel.value = deckId;
+        addOverlay.classList.add("open");
+        setTimeout(function(){ document.getElementById("addTitle").focus(); }, 60);
+      }
+      function closeAdd(){ addOverlay.classList.remove("open"); }
+      document.getElementById("cancelAdd").addEventListener("click", closeAdd);
+      addOverlay.addEventListener("click", function(e){ if (e.target === addOverlay) closeAdd(); });
+      document.getElementById("addForm").addEventListener("submit", function(e){
+        e.preventDefault();
+        var title = document.getElementById("addTitle").value.trim();
+        var proof = document.getElementById("addProof").value.trim();
+        if (!title) return;
+        var lanes = [];
+        addOverlay.querySelectorAll('input[name="lane"]:checked').forEach(function(cb){ lanes.push(cb.value); });
+        var card = {
+          id: "u-" + (++userSeq) + "-" + Date.now(),
+          deck: addDeckSel.value,
+          title: title, sub: "Added by you", dates: "",
+          proof: proof || "A new card in the deck.", lanes: lanes
+        };
+        CARDS.push(card); byId[card.id] = card;
+        var zone = zonesEl.querySelector('.zone[data-deck="' + card.deck + '"]');
+        var spread = zone.querySelector(".spread");
+        var addBtn = spread.querySelector(".addcard");
+        var el = buildCardEl(card, CARDS.length);
+        spread.insertBefore(el, addBtn);
+        var countEl = zone.querySelector(".zone-count");
+        var n = CARDS.filter(function(c){ return c.deck === card.deck; }).length;
+        countEl.textContent = n + " cards";
+        if (activePreset){
+          el.classList.add(lanes.indexOf(activePreset) >= 0 ? "fit" : "dim");
+        }
+        closeAdd();
+        e.target.reset();
+        el.scrollIntoView({ behavior:"smooth", block:"center" });
+        toast("On the table: " + title + ". Tap it to deal it into your hand.");
+      });
+
+      /* Escape closes overlays */
+      document.addEventListener("keydown", function(e){
+        if (e.key === "Escape"){ closePreview(); closeAdd(); }
+      });
+
+      /* ============ GO ============ */
+      renderDecks();
+      syncSelection();
+    </script>
+  </body>
+</html>
